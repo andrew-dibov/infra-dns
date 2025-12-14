@@ -1,0 +1,10 @@
+%{ for name, config in hosts ~}
+Host ${name}
+  HostName ${config.host_name}
+  User ${config.user}
+  IdentityFile ${config.key_path}
+  StrictHostKeyChecking accept-new
+%{ if !config.is_bastion ~}
+  ProxyJump dns-bastion
+%{ endif ~}
+%{ endfor ~}

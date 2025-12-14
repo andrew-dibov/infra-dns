@@ -1,0 +1,22 @@
+#cloud-init
+package_update: true
+package_upgrade: true
+
+packages:
+  %{ for package in packages~}
+  - ${package}
+  %{ endfor ~}
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-bastion.conf
+    content: |
+      AllowTcpForwarding yes
+      GatewayPorts no
+      X11Forwarding no
+      PermitTunnel no
+      AllowAgentForwarding no
+      PermitRootLogin no
+      PasswordAuthentication no
+
+runcmd:
+  - systemctl restart sshd
