@@ -5,7 +5,7 @@ variable "compute_instance_platform_id" {
 
 locals {
   compute_instance_configs = {
-    (local.compute_instance_names.bastion_name) = { # Bastion : NAT, public IP, SSH
+    (local.compute_instance_names.bastion_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -17,14 +17,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = true
+        nat                = true
+        security_group_ids = [yandex_vpc_security_group.bastion.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.client_name) = { # Client : пользовательский хост
+    (local.compute_instance_names.client_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -36,14 +37,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.resolver_name) = { # Unbound : рекурсивный сервер имен
+    (local.compute_instance_names.resolver_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -55,14 +57,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.root_name) = { # bind9 : корневой сервер имен
+    (local.compute_instance_names.root_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -74,14 +77,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.top_level_domain_name) = { # Knot DNS : сервер имен верхнего уровня
+    (local.compute_instance_names.top_level_domain_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -93,14 +97,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.authority_a_name) = { # PowerDNS : авторитативный сервер
+    (local.compute_instance_names.authority_a_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -112,14 +117,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.authority_b_name) = { # NSD : авторитативный сервер
+    (local.compute_instance_names.authority_b_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -131,14 +137,15 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
         preemptible = true
       }
     },
-    (local.compute_instance_names.load_balancer_name) = { # haproxy : балансировка нагрузка
+    (local.compute_instance_names.load_balancer_name) = {
       compute_instance_resources = {
         cores         = 2
         memory        = 2
@@ -150,7 +157,8 @@ locals {
       }
 
       compute_instance_network_interface = {
-        nat = false
+        nat                = false
+        security_group_ids = [yandex_vpc_security_group.internal.id]
       }
 
       compute_instance_scheduling_policy = {
@@ -162,12 +170,12 @@ locals {
   compute_instance_cloud_init_templates = {
     (local.compute_instance_names.bastion_name)          = templatefile("${var.tpls_dir}/cloud-init-bastion.yaml.tftpl", { packages = [] })
     (local.compute_instance_names.client_name)           = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
-    (local.compute_instance_names.resolver_name)         = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
-    (local.compute_instance_names.root_name)             = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
-    (local.compute_instance_names.top_level_domain_name) = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
-    (local.compute_instance_names.authority_a_name)      = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
-    (local.compute_instance_names.authority_b_name)      = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
-    (local.compute_instance_names.load_balancer_name)    = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip", "iproute2"] })
+    (local.compute_instance_names.resolver_name)         = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip"] })
+    (local.compute_instance_names.root_name)             = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip"] })
+    (local.compute_instance_names.top_level_domain_name) = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip"] })
+    (local.compute_instance_names.authority_a_name)      = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip"] })
+    (local.compute_instance_names.authority_b_name)      = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip"] })
+    (local.compute_instance_names.load_balancer_name)    = templatefile("${var.tpls_dir}/cloud-init.yaml.tftpl", { packages = ["python3", "python3-pip"] })
   }
 }
 
@@ -196,22 +204,14 @@ resource "yandex_compute_instance" "compute_instance" {
   }
 
   network_interface {
-    subnet_id = yandex_vpc_subnet.subnet.id
-    nat       = each.value.compute_instance_network_interface.nat
+    subnet_id          = yandex_vpc_subnet.subnet.id
+    nat                = each.value.compute_instance_network_interface.nat
+    security_group_ids = each.value.compute_instance_network_interface.security_group_ids
   }
 
   scheduling_policy {
     preemptible = each.value.compute_instance_scheduling_policy.preemptible
   }
-
-  # CloudInit
-  # - cloud-init status
-  # - cloud-init status --long
-  # - cat /var/log/cloud-init.log
-  # - cat /var/log/cloud-init-output.log
-
-  # ssh -o ProxyCommand="ssh -W %h:%p -i .auth/id-dns-bastion debian@158.160.53.245" -i .auth/id-dns-root debian@10.0.0.34
-  # ssh -F ./.auth/ssh_config dns-resolver
 
   metadata = {
     ssh-keys  = "debian:${tls_private_key.key[each.key].public_key_openssh}"

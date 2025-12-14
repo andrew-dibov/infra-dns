@@ -26,3 +26,18 @@
 
 feature/init-infra          # базовая инфра
 feature/ansible             # плейбуки
+
+---
+
+Bastion : NAT, public IP, SSH
+Client : пользовательский хост
+bind9 : корневой сервер имен
+Unbind
+Knot DNS : сервер имен верхнего уровня
+PowerDNS : авторитативный сервер
+NSD : авторитативный сервер
+haproxy : балансировка нагрузка
+
+---
+
+ssh -F ./.auth/ssh_config dns-resolver
