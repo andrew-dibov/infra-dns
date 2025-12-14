@@ -31,6 +31,7 @@ resource "yandex_vpc_network" "network" {
 
 resource "yandex_vpc_gateway" "nat" {
   name = var.vpc_gateway_nat_name
+  shared_egress_gateway {}
 }
 
 resource "yandex_vpc_route_table" "nat" {

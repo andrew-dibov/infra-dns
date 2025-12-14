@@ -1,0 +1,7 @@
+---
+all:
+  hosts:
+  %{ for name, vm in vms ~}
+  ${name}:
+      ansible_host: ${name}
+  %{ endfor ~}

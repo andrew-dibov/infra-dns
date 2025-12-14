@@ -218,3 +218,24 @@ resource "yandex_compute_instance" "compute_instance" {
     user-data = local.compute_instance_cloud_init_templates[each.key]
   }
 }
+
+resource "local_file" "ansible_cfg" {
+  filename = "../ansible/ansible.cfg"
+  content  = <<-EOT
+  [defaults]
+  inventory = inventory.yaml
+  host_key_checking = False
+  ssh_args = -F ../.auth/ssh_config -o ControlMaster=auto -o ControlPersist=30m
+  interpreter_python = /usr/bin/python3
+
+  [ssh_connection]
+  ssh_args = -F ../.auth/ssh_config -o ControlMaster=auto -o ControlPersist=30m -o ServerAliveInterval=60
+  EOT
+}
+
+resource "local_file" "ansible_inventory" {
+  filename = "../ansible/inventory.yaml"
+  content = templatefile("${var.tpls_dir}/inventory.tftpl", {
+    vms = yandex_compute_instance.compute_instance
+  })
+}

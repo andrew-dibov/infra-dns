@@ -30,14 +30,11 @@ variable "sa_key_name" {
 
 # ---
 
-# Stub resolver — тупой клиент, который только передаёт запрос дальше
-# Recursive resolver — умный сервер, который сам ходит по всей цепочке
-
 locals {
   compute_instance_names = {
     bastion_name          = "dns-bastion"
-    client_name           = "dns-stub-resolver"
-    resolver_name         = "dns-recursive-resolver"
+    client_name           = "dns-stub-resolver"      # Stub Resolver : клиент, передающий запрос дальше
+    resolver_name         = "dns-recursive-resolver" # Recursive Resolver : сервер, обращающийся по цепочке
     root_name             = "dns-root-server"
     top_level_domain_name = "dns-top-level-domain-server"
     authority_a_name      = "dns-authoritative-ns1"

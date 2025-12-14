@@ -1,0 +1,20 @@
+---
+all:
+  hosts:
+    dns-authoritative-ns1:
+      ansible_host: dns-authoritative-ns1
+    dns-authoritative-ns2:
+      ansible_host: dns-authoritative-ns2
+    dns-bastion:
+      ansible_host: dns-bastion
+    dns-load-balancer:
+      ansible_host: dns-load-balancer
+    dns-recursive-resolver:
+      ansible_host: dns-recursive-resolver
+    dns-root-server:
+      ansible_host: dns-root-server
+    dns-stub-resolver:
+      ansible_host: dns-stub-resolver
+    dns-top-level-domain-server:
+      ansible_host: dns-top-level-domain-server
+  
