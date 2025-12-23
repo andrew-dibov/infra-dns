@@ -1,0 +1,12 @@
+---
+- name: "Root Server playbook"
+  ansible.builtin.import_playbook: playbooks/root.yaml
+
+- name: "Top Level Domain Server playbook"
+  ansible.builtin.import_playbook: playbooks/top-level-domain.yaml
+
+- name: "Authoritative Server playbook"
+  ansible.builtin.import_playbook: playbooks/authoritative.yaml
+
+- name: "Recursive Resolver playbook"
+  ansible.builtin.import_playbook: playbooks/recursive-resolver.yaml

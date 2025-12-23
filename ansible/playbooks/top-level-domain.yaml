@@ -1,0 +1,197 @@
+- name: "Top Level Domain Server"
+  hosts: top-level-domain
+  become: true
+  vars_files: ../variables/variables.yaml
+  vars:
+    admin: "andrew.dibov@ya.ru"
+
+    serial_number: "{{ ansible_date_time.date | replace('-', '') }}01"
+    refresh: "3600"
+    retry: "1800"
+    expire: "3600"
+    ttl: "300"
+    min_ttl: "150"
+
+    main_ns: ""
+    domain_ns: ""
+    domain: ""
+
+  tasks:
+    - name: "Top Level Domain : update"
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: "Top Level Domain : install"
+      ansible.builtin.apt:
+        state: present
+        name:
+          - bind9
+          - bind9utils
+          - dnsutils
+
+    - name: "Top Level Domain : stop service if running"
+      ansible.builtin.systemd:
+        name: bind9
+        state: stopped
+
+    - name: "Top Level Domain : remove default config dir"
+      ansible.builtin.file:
+        path: /etc/bind
+        state: absent
+
+    - name: "Top Level Domain : create default config dir"
+      ansible.builtin.file:
+        path: /etc/bind
+        state: directory
+        owner: root
+        group: bind
+        mode: '0755'
+
+    - name: "Top Level Domain : create custom zones dir"
+      ansible.builtin.file:
+        path: /etc/bind/zones
+        state: directory
+        owner: bind
+        group: bind
+        mode: '0755'
+
+    - name: "Top Level Domain : create named.conf"
+      ansible.builtin.copy:
+        dest: "/etc/bind/named.conf"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          options {
+            directory "/var/cache/bind";
+
+            listen-on port 53 { any; };
+
+            allow-query { any; };
+            allow-transfer { none; };
+            allow-update { none; };
+
+            recursion no;
+            auth-nxdomain no;
+            dnssec-validation no;
+          };
+
+          zone "test" {
+            type master;
+            file "/etc/bind/db.test";
+            allow-transfer { none; };
+            allow-update { none; };
+          };
+
+          zone "." {
+            type hint;
+            file "/etc/bind/db.root.hints";
+          };
+
+          zone "localhost" {
+            type master;
+            file "/etc/bind/db.local";
+          };
+
+          zone "127.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.127";
+          };
+
+          zone "0.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.0";
+          };
+
+          zone "255.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.255";
+          };
+
+    - name: "Top Level Domain : create db.root.hints"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.root.hints"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          . 3600000 IN NS ns.root.
+          ns.root. 3600000 IN A {{ root_ip }}
+
+    - name: "Top Level Domain : create db.test"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.test"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          $TTL 300
+          @ IN SOA ns.test. admin.test. (
+            {{ ansible_date_time.date | replace("-", "") }}01
+            3600
+            1800
+            604800
+            300
+          )
+
+          @ IN NS ns.test.
+          ns.test. IN A {{ top_level_domain_ip }}
+
+          some.test. IN NS ns.auth-a.some.test.
+          some.test. IN NS ns.auth-b.some.test.
+
+          ns.auth-a.some.test. IN A {{ authoritative_a_ip }}
+          ns.auth-b.some.test. IN A {{ authoritative_b_ip }}
+
+    - name: "Root : create db.127"
+      ansible.builtin.template:
+        src: templates/db.127.j2
+        dest: "/etc/bind/db.127"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.local"
+      ansible.builtin.template:
+        src: templates/db.local.j2
+        dest: "/etc/bind/db.local"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.0"
+      ansible.builtin.template:
+        src: templates/db.0.j2
+        dest: "/etc/bind/db.0"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.255"
+      ansible.builtin.template:
+        src: templates/db.255.j2
+        dest: /etc/bind/db.255
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Top Level Domain : check named.conf"
+      ansible.builtin.command:
+        cmd: named-checkconf /etc/bind/named.conf
+      register: conf_status
+      failed_when: conf_status.rc != 0
+      changed_when: false
+
+    - name: "Top Level Domain : check db.test"
+      ansible.builtin.command:
+        cmd: named-checkzone test /etc/bind/db.test
+      register: zone_status
+      failed_when: zone_status.rc != 0
+      changed_when: false
+
+    - name: "Top Level Domain : reload systemd and restart service"
+      ansible.builtin.systemd:
+        name: bind9
+        state: restarted
+        enabled: true
+        daemon_reload: true

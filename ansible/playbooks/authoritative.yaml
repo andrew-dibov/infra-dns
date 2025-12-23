@@ -1,0 +1,232 @@
+- name: "Authoritative Server"
+  hosts:
+    - authoritative-ns1
+    - authoritative-ns2
+  become: true
+  vars_files: ../variables/variables.yaml
+
+  tasks:
+    - name: "Authoritative : update"
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: "Authoritative : install"
+      ansible.builtin.apt:
+        state: present
+        name:
+          - bind9
+          - bind9utils
+          - dnsutils
+
+    - name: "Authoritative : stop service if running"
+      ansible.builtin.systemd:
+        name: bind9
+        state: stopped
+
+    - name: "Authoritative : remove default config dir"
+      ansible.builtin.file:
+        path: /etc/bind
+        state: absent
+
+    - name: "Authoritative : create default config dir"
+      ansible.builtin.file:
+        path: /etc/bind
+        state: directory
+        owner: root
+        group: bind
+        mode: '0755'
+
+    - name: "Authoritative : create custom zones dir"
+      ansible.builtin.file:
+        path: /etc/bind/zones
+        state: directory
+        owner: bind
+        group: bind
+        mode: '0755'
+
+    - name: "Authoritative : create named.conf"
+      ansible.builtin.copy:
+        dest: "/etc/bind/named.conf"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          options {
+            directory "/var/cache/bind";
+
+            listen-on port 53 { any; };
+
+            allow-query { any; };
+            allow-transfer { none; };
+            allow-update { none; };
+
+            recursion no;
+            auth-nxdomain no;
+            dnssec-validation no;
+          };
+
+          zone "some.test" {
+            type master;
+            file "/etc/bind/db.some.test";
+            allow-transfer { none; };
+            allow-update { none; };
+          };
+
+          zone "." {
+            type hint;
+            file "/etc/bind/db.root.hints";
+          };
+
+          zone "localhost" {
+            type master;
+            file "/etc/bind/db.local";
+          };
+
+          zone "127.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.127";
+          };
+
+          zone "0.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.0";
+          };
+
+          zone "255.in-addr.arpa" {
+            type master;
+            file "/etc/bind/db.255";
+          };
+
+    - name: "Authoritative : create db.root.hints"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.root.hints"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          . 3600000 IN NS ns.root.
+          ns.root. 3600000 IN A {{ root_ip }}
+
+    - name: "Authoritative : create db.some.test"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.some.test"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          $TTL 300
+          @ IN SOA ns.auth-a.some.test. admin.some.test. (
+            {{ ansible_date_time.date | replace("-", "") }}01
+            3600
+            1800
+            604800
+            300
+          )
+
+          @ IN NS ns.auth-a.some.test.
+          @ IN NS ns.auth-b.some.test.
+
+          ns.auth-a.some.test. IN A {{ authoritative_a_ip }}
+          ns.auth-b.some.test. IN A {{ authoritative_b_ip }}
+
+          @ IN A {{ www_a_ip }}
+
+          www IN A {{ www_a_ip }}
+          www IN A {{ www_b_ip }}
+
+          www-a IN A {{ www_a_ip }}
+          www-b IN A {{ www_b_ip }}
+
+          ns1 IN CNAME ns.auth-a.some.test.
+          ns2 IN CNAME ns.auth-b.some.test.
+
+    - name: "Authoritative : create db.127"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.127"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          $TTL 604800
+          @ IN SOA localhost. root.localhost. (
+            1
+            604800
+            86400
+            2419200
+            604800
+          )
+          @ IN NS localhost.
+          1.0.0 IN PTR localhost.
+
+    - name: "Authoritative : create db.local"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.local"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          $TTL 604800
+          @ IN SOA localhost. root.localhost. (
+            1
+            604800
+            86400
+            2419200
+            604800
+          )
+          @ IN NS localhost.
+          @ IN A 127.0.0.1
+
+    - name: "Authoritative : create db.0"
+      ansible.builtin.copy:
+        dest: "/etc/bind/db.0"
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          $TTL 604800
+          @ IN SOA localhost. root.localhost. (
+            1
+            604800
+            86400
+            2419200
+            604800
+          )
+          @ IN NS localhost.
+
+    - name: "Authoritative : create db.255"
+      ansible.builtin.copy:
+        dest: /etc/bind/db.255
+        owner: root
+        group: bind
+        mode: '0644'
+        content: |
+          $TTL 604800
+          @ IN SOA localhost. root.localhost. (
+            1
+            604800
+            86400
+            2419200
+            604800
+          )
+          @ IN NS localhost.
+
+    - name: "Authoritative : check named.conf"
+      ansible.builtin.command:
+        cmd: named-checkconf /etc/bind/named.conf
+      register: conf_status
+      failed_when: conf_status.rc != 0
+      changed_when: false
+
+    - name: "Authoritative : check db.root"
+      ansible.builtin.command:
+        cmd: named-checkzone some.test /etc/bind/db.some.test
+      register: zone_status
+      failed_when: zone_status.rc != 0
+      changed_when: false
+
+    - name: "Authoritative : reload systemd and restart service"
+      ansible.builtin.systemd:
+        name: bind9
+        state: restarted
+        enabled: true
+        daemon_reload: true

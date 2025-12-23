@@ -1,5 +1,5 @@
 resource "tls_private_key" "key" {
-  for_each  = toset(values(local.compute_instance_names))
+  for_each  = toset(values(local.hostnames))
   algorithm = "ED25519"
 }
 
@@ -19,16 +19,15 @@ resource "local_file" "public_key" {
   file_permission = "0644"
 }
 
-# ---
-
 resource "local_file" "ssh_config" {
   filename = "${var.auth_dir}/ssh_config"
-  content = templatefile("${var.tpls_dir}/ssh-config.tftpl", {
+  content = templatefile("${var.templates_dir}/auth/ssh-config.tftpl", {
+    bastion = local.hostnames.bastion
     hosts = {
-      for name, vm in yandex_compute_instance.compute_instance :
+      for name, vm in yandex_compute_instance.hosts :
       name => {
-        is_bastion = name == (local.compute_instance_names.bastion_name)
-        host_name  = name == (local.compute_instance_names.bastion_name) ? vm.network_interface[0].nat_ip_address : vm.network_interface[0].ip_address
+        is_bastion = name == (local.hostnames.bastion)
+        host_name  = name == (local.hostnames.bastion) ? vm.network_interface[0].nat_ip_address : vm.network_interface[0].ip_address
         key_path   = "${var.auth_dir}/${name}"
         user       = "debian"
       }

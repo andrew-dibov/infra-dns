@@ -5,6 +5,6 @@ Host ${name}
   IdentityFile ${config.key_path}
   StrictHostKeyChecking accept-new
 %{ if !config.is_bastion ~}
-  ProxyJump dns-bastion
+  ProxyJump ${bastion}
 %{ endif ~}
 %{ endfor ~}

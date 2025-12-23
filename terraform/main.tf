@@ -1,15 +1,15 @@
 # terraform.tfvars
-variable "yc_cloud_id" {
+variable "yandex_cloud_cloud_id" {
   type = string
 }
 
 # terraform.tfvars
-variable "yc_folder_id" {
+variable "yandex_cloud_folder_id" {
   type = string
 }
 
 # terraform.tfvars
-variable "yc_zone_id" {
+variable "yandex_cloud_zone_id" {
   type = string
 }
 
@@ -19,28 +19,13 @@ variable "auth_dir" {
 }
 
 # terraform.tfvars
-variable "tpls_dir" {
+variable "templates_dir" {
   type = string
 }
 
 # terraform.tfvars
-variable "sa_key_name" {
+variable "service_account_key_name" {
   type = string
-}
-
-# ---
-
-locals {
-  compute_instance_names = {
-    bastion_name          = "dns-bastion"
-    client_name           = "dns-stub-resolver"      # Stub Resolver : клиент, передающий запрос дальше
-    resolver_name         = "dns-recursive-resolver" # Recursive Resolver : сервер, обращающийся по цепочке
-    root_name             = "dns-root-server"
-    top_level_domain_name = "dns-top-level-domain-server"
-    authority_a_name      = "dns-authoritative-ns1"
-    authority_b_name      = "dns-authoritative-ns2"
-    load_balancer_name    = "dns-load-balancer"
-  }
 }
 
 # ---
@@ -67,9 +52,9 @@ terraform {
 }
 
 provider "yandex" {
-  cloud_id  = var.yc_cloud_id
-  folder_id = var.yc_folder_id
+  cloud_id  = var.yandex_cloud_cloud_id
+  folder_id = var.yandex_cloud_folder_id
 
-  zone                     = var.yc_zone_id
-  service_account_key_file = "${var.auth_dir}/${var.sa_key_name}"
+  zone                     = var.yandex_cloud_zone_id
+  service_account_key_file = "${var.auth_dir}/${var.service_account_key_name}"
 }

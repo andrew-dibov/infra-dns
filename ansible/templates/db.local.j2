@@ -1,0 +1,11 @@
+$TTL {{ ttl }}
+@ IN SOA localhost. root.localhost. (
+  1
+  {{ refresh }}
+  {{ retry }}
+  {{ expire }}
+  {{ min_ttl }}
+)
+
+@ IN NS localhost.
+@ IN A 127.0.0.1

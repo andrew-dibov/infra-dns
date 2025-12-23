@@ -1,0 +1,125 @@
+- name: "Root Server"
+  hosts: root
+  become: true
+  vars_files: ../variables/variables.yaml
+  vars:
+    admin: "andrew.dibov@ya.ru"
+
+    serial_number: "{{ ansible_date_time.date | replace('-', '') }}01"
+    refresh: "3600"
+    retry: "1800"
+    expire: "3600"
+    ttl: "300"
+    min_ttl: "150"
+
+    main_ns: "ns.root."
+    domain_ns: "ns.test."
+    domain: "test."
+
+  tasks:
+    - name: "Root : update"
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: "Root : install"
+      ansible.builtin.apt:
+        state: present
+        name:
+          - bind9
+          - bind9utils
+          - dnsutils
+
+    - name: "Root : stop service if running"
+      ansible.builtin.systemd:
+        name: bind9
+        state: stopped
+
+    - name: "Root : remove default config dir"
+      ansible.builtin.file:
+        path: /etc/bind
+        state: absent
+
+    - name: "Root : create default config dir"
+      ansible.builtin.file:
+        path: /etc/bind
+        state: directory
+        owner: root
+        group: bind
+        mode: '0755'
+
+    - name: "Root : create custom zones dir"
+      ansible.builtin.file:
+        path: /etc/bind/zones
+        state: directory
+        owner: bind
+        group: bind
+        mode: '0755'
+
+    - name: "Root : create named.conf"
+      ansible.builtin.template:
+        src: templates/root.named.conf.j2
+        dest: "/etc/bind/named.conf"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.root"
+      ansible.builtin.template:
+        src: templates/db.root.j2
+        dest: "/etc/bind/db.root"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.127"
+      ansible.builtin.template:
+        src: templates/db.127.j2
+        dest: "/etc/bind/db.127"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.local"
+      ansible.builtin.template:
+        src: templates/db.local.j2
+        dest: "/etc/bind/db.local"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.0"
+      ansible.builtin.template:
+        src: templates/db.0.j2
+        dest: "/etc/bind/db.0"
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : create db.255"
+      ansible.builtin.template:
+        src: templates/db.255.j2
+        dest: /etc/bind/db.255
+        owner: root
+        group: bind
+        mode: '0644'
+
+    - name: "Root : check named.conf"
+      ansible.builtin.command:
+        cmd: named-checkconf /etc/bind/named.conf
+      register: conf_status
+      failed_when: conf_status.rc != 0
+      changed_when: false
+
+    - name: "Root : check db.root"
+      ansible.builtin.command:
+        cmd: named-checkzone . /etc/bind/db.root
+      register: zone_status
+      failed_when: zone_status.rc != 0
+      changed_when: false
+
+    - name: "Root : reload systemd and restart service"
+      ansible.builtin.systemd:
+        name: bind9
+        state: restarted
+        enabled: true
+        daemon_reload: true

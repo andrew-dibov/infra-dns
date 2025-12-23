@@ -1,0 +1,14 @@
+$TTL {{ ttl }}
+. IN SOA {{ main_ns }} {{ admin }} (
+  {{ serial_number }}
+  {{ refresh }}
+  {{ retry }}
+  {{ expire }}
+  {{ min_ttl }}
+)
+
+. IN NS {{ main_ns }}
+{{ main_ns }} IN A {{ root_ip }}
+
+{{ domain }} IN NS {{ domain_ns }}
+{{ domain_ns }} IN A {{ top_level_domain_ip }}

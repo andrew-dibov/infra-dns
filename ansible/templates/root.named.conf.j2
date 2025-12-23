@@ -1,0 +1,40 @@
+options {
+  directory "/var/cache/bind";
+
+  listen-on port 53 { any; };
+
+  allow-query { any; };
+  allow-transfer { none; };
+  allow-update { none; };
+
+  recursion no;
+  auth-nxdomain no;
+  dnssec-validation no;
+};
+
+zone "." {
+  type master;
+  file "/etc/bind/db.root";
+  allow-transfer { none; };
+  allow-update { none; };
+};
+
+zone "localhost" {
+  type master;
+  file "/etc/bind/db.local";
+};
+
+zone "127.in-addr.arpa" {
+  type master;
+  file "/etc/bind/db.127";
+};
+
+zone "0.in-addr.arpa" {
+  type master;
+  file "/etc/bind/db.0";
+};
+
+zone "255.in-addr.arpa" {
+  type master;
+  file "/etc/bind/db.255";
+};
