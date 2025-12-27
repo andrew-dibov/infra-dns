@@ -1,0 +1,8 @@
+- name: "Root"
+  ansible.builtin.import_playbook: ./playbooks/root.yaml
+- name: "TLD"
+  ansible.builtin.import_playbook: ./playbooks/tld.yaml
+- name: "Auth"
+  ansible.builtin.import_playbook: ./playbooks/auth.yaml
+- name: "Recursive"
+  ansible.builtin.import_playbook: ./playbooks/recursive.yaml
