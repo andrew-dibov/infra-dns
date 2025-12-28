@@ -4,37 +4,43 @@ options {
   listen-on port 53 { any; };
 
   allow-query { any; };
-  allow-recursion { localhost; {{ subnet_cidr }}; };
-
   allow-transfer { none; };
   allow-update { none; };
 
-  recursion yes;
+  recursion no;
   auth-nxdomain no;
   dnssec-validation no;
 };
 
+zone "{{ zone }}" {
+  type master;
+  file "{{ zone_path }}/db.tldd";
+
+  allow-transfer { none; };
+  allow-update { none; };
+};
+
 zone "{{ root_zone }}" {
   type hint;
-  file "{{ zones_path }}/db.root.hints";
+  file "{{ zone_path }}/db.root.hints";
 };
 
 zone "localhost" {
   type master;
-  file "{{ zones_path }}/db.local";
+  file "{{ zone_path }}/db.local";
 };
 
 zone "0.in-addr.arpa" {
   type master;
-  file "{{ zones_path }}/db.0";
+  file "{{ zone_path }}/db.0";
 };
 
 zone "127.in-addr.arpa" {
   type master;
-  file "{{ zones_path }}/db.127";
+  file "{{ zone_path }}/db.127";
 };
 
 zone "255.in-addr.arpa" {
   type master;
-  file "{{ zones_path }}/db.255";
+  file "{{ zone_path }}/db.255";
 };

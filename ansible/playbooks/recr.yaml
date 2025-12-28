@@ -1,21 +1,21 @@
 ---
-- name: "Recursive"
+- name: "RECR"
   become: true
-  hosts: recursive
+  hosts: recr
   vars_files:
-    - "../vars/common.yaml"
-    - "../vars/terraform.yaml"
+    - "../variables/common.yaml"
+    - "../variables/terraform.yaml"
 
   vars:
     root_zone: "."
     root_ns: "ns.root."
 
   tasks:
-    - name: "Recursive : update"
+    - name: "RECR : update"
       ansible.builtin.apt:
         update_cache: true
 
-    - name: "Recursive : install"
+    - name: "RECR : install"
       ansible.builtin.apt:
         state: present
         name:
@@ -23,17 +23,17 @@
           - bind9utils
           - dnsutils
 
-    - name: "Recursive : stop service"
+    - name: "RECR : stop service"
       ansible.builtin.systemd:
         name: bind9
         state: stopped
 
-    - name: "Recursive : remove config dir"
+    - name: "RECR : remove config dir"
       ansible.builtin.file:
         path: "{{ bind_path }}"
         state: absent
 
-    - name: "Recursive : create config dir"
+    - name: "RECR : create config dir"
       ansible.builtin.file:
         path: "{{ bind_path }}"
         state: directory
@@ -41,23 +41,23 @@
         group: bind
         mode: '0755'
 
-    - name: "Recursive : create named.conf"
+    - name: "RECR : create named.conf"
       ansible.builtin.template:
-        src: "templates/recursive/recursive.conf.j2"
+        src: "templates/recr/recr.conf.j2"
         dest: "{{ bind_path }}/named.conf"
         owner: root
         group: bind
         mode: '0644'
 
-    - name: "Recursive : create zones dir"
+    - name: "RECR : create zones dir"
       ansible.builtin.file:
-        path: "{{ zones_path }}"
+        path: "{{ zone_path }}"
         state: directory
         owner: bind
         group: bind
         mode: '0755'
 
-    - name: "Recursive : create zones"
+    - name: "RECR : create zones"
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -65,20 +65,20 @@
         group: bind
         mode: '0644'
       loop:
-        - { src: "templates/common/db.root.hints.j2", dest: "{{ zones_path }}/db.root.hints" }
-        - { src: "templates/common/db.local.j2", dest: "{{ zones_path }}/db.local" }
-        - { src: "templates/common/db.0.j2", dest: "{{ zones_path }}/db.0" }
-        - { src: "templates/common/db.127.j2", dest: "{{ zones_path }}/db.127" }
-        - { src: "templates/common/db.255.j2", dest: "{{ zones_path }}/db.255" }
+        - { src: "templates/common/db.root.hints.j2", dest: "{{ zone_path }}/db.root.hints" }
+        - { src: "templates/common/db.local.j2", dest: "{{ zone_path }}/db.local" }
+        - { src: "templates/common/db.0.j2", dest: "{{ zone_path }}/db.0" }
+        - { src: "templates/common/db.127.j2", dest: "{{ zone_path }}/db.127" }
+        - { src: "templates/common/db.255.j2", dest: "{{ zone_path }}/db.255" }
 
-    - name: "Recursive : check named.conf"
+    - name: "RECR : check named.conf"
       ansible.builtin.command:
         cmd: "named-checkconf {{ bind_path }}/named.conf"
       register: conf_status
       failed_when: conf_status.rc != 0
       changed_when: false
 
-    - name: "Recursive : reload and restart service"
+    - name: "RECR : reload and restart service"
       ansible.builtin.systemd:
         name: bind9
         state: restarted

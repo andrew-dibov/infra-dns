@@ -21,6 +21,7 @@ func main() {
 			"google.com",
 			"github.com",
 			"youtube.com",
+			"gulllulululululululu.com",
 		}
 	} else {
 		doms = strings.Split(domsEnv, ",")
@@ -42,8 +43,9 @@ func main() {
 
 			if err != nil {
 				fmt.Print("ERR : ", err)
+				fmt.Println()
 			} else {
-				fmt.Print("OK : ", len(ips))
+				fmt.Print("OK : ", len(ips), " addr : ")
 
 				for j, ip := range ips {
 					if j > 0 {

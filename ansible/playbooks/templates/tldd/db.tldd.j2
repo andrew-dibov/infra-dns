@@ -1,0 +1,18 @@
+$TTL {{ ttl }}
+
+@ IN SOA {{ soa_mname }} {{ soa_rname }} (
+  {{ num }}
+  {{ ref }}
+  {{ ret }}
+  {{ exp }}
+  {{ ttl }}
+)
+
+@ IN NS {{ soa_mname }}
+{{ soa_mname }} IN A {{ tldd_ip }}
+
+{{ auth_domain }} IN NS {{ auth_ns_server_a }}
+{{ auth_domain }} IN NS {{ auth_ns_server_b }}
+
+{{ auth_ns_server_a }} IN A {{ au_a_ip }}
+{{ auth_ns_server_b }} IN A {{ au_b_ip }}

@@ -1,10 +1,11 @@
 $TTL {{ ttl }}
+
 @ IN SOA localhost. root.localhost. (
   1
-  {{ refresh }}
-  {{ retry }}
-  {{ expire }}
-  {{ min_ttl }}
+  {{ ref }}
+  {{ ret }}
+  {{ exp }}
+  {{ ttl }}
 )
 
 @ IN NS localhost.

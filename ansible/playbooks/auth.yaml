@@ -1,35 +1,31 @@
 ---
-- name: "Auth"
+- name: "AUTH"
   become: true
   hosts:
-    - auth-a
-    - auth-b
+    - au-a
+    - au-b
   vars_files:
-    - "../vars/common.yaml"
-    - "../vars/terraform.yaml"
+    - "../variables/common.yaml"
+    - "../variables/terraform.yaml"
 
   vars:
     zone: "subdomain.domain"
-
     root_zone: "."
     root_ns: "ns.root."
-
-    soa_mname: "ns.auth-a.subdomain.domain."
+    soa_mname: "ns.au-a.subdomain.domain."
     soa_rname: "admin.subdomain.domain."
-
-    primary_ns: "ns.auth-a.subdomain.domain."
-    secondary_ns: "ns.auth-b.subdomain.domain."
-
+    primary_ns: "ns.au-a.subdomain.domain."
+    secondary_ns: "ns.au-b.subdomain.domain."
     www_record: "www"
-    www_record_a: "www-a"
-    www_record_b: "www-b"
+    www_record_a: "wwa"
+    www_record_b: "wwb"
 
   tasks:
-    - name: "Auth : update"
+    - name: "AUTH : update"
       ansible.builtin.apt:
         update_cache: true
 
-    - name: "Auth : install"
+    - name: "AUTH : install"
       ansible.builtin.apt:
         state: present
         name:
@@ -37,17 +33,17 @@
           - bind9utils
           - dnsutils
 
-    - name: "Auth : stop service"
+    - name: "AUTH : stop service"
       ansible.builtin.systemd:
         name: bind9
         state: stopped
 
-    - name: "Auth : remove config dir"
+    - name: "AUTH : remove config dir"
       ansible.builtin.file:
         path: "{{ bind_path }}"
         state: absent
 
-    - name: "Auth : create config dir"
+    - name: "AUTH : create config dir"
       ansible.builtin.file:
         path: "{{ bind_path }}"
         state: directory
@@ -55,7 +51,7 @@
         group: bind
         mode: '0755'
 
-    - name: "Auth : create named.conf"
+    - name: "AUTH : create named.conf"
       ansible.builtin.template:
         src: "templates/auth/auth.conf.j2"
         dest: "{{ bind_path }}/named.conf"
@@ -63,15 +59,15 @@
         group: bind
         mode: '0644'
 
-    - name: "Auth : create zones dir"
+    - name: "AUTH : create zones dir"
       ansible.builtin.file:
-        path: "{{ zones_path }}"
+        path: "{{ zone_path }}"
         state: directory
         owner: bind
         group: bind
         mode: '0755'
 
-    - name: "Auth : create zones"
+    - name: "AUTH : create zones"
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -79,28 +75,28 @@
         group: bind
         mode: '0644'
       loop:
-        - { src: "templates/auth/db.auth.j2", dest: "{{ zones_path }}/db.auth" }
-        - { src: "templates/common/db.root.hints.j2", dest: "{{ zones_path }}/db.root.hints" }
-        - { src: "templates/common/db.local.j2", dest: "{{ zones_path }}/db.local" }
-        - { src: "templates/common/db.0.j2", dest: "{{ zones_path }}/db.0" }
-        - { src: "templates/common/db.127.j2", dest: "{{ zones_path }}/db.127" }
-        - { src: "templates/common/db.255.j2", dest: "{{ zones_path }}/db.255" }
+        - { src: "templates/auth/db.auth.j2", dest: "{{ zone_path }}/db.auth" }
+        - { src: "templates/common/db.root.hints.j2", dest: "{{ zone_path }}/db.root.hints" }
+        - { src: "templates/common/db.local.j2", dest: "{{ zone_path }}/db.local" }
+        - { src: "templates/common/db.0.j2", dest: "{{ zone_path }}/db.0" }
+        - { src: "templates/common/db.127.j2", dest: "{{ zone_path }}/db.127" }
+        - { src: "templates/common/db.255.j2", dest: "{{ zone_path }}/db.255" }
 
-    - name: "Auth : check named.conf"
+    - name: "AUTH : check named.conf"
       ansible.builtin.command:
         cmd: "named-checkconf {{ bind_path }}/named.conf"
       register: conf_status
       failed_when: conf_status.rc != 0
       changed_when: false
 
-    - name: "Auth : check db.auth"
+    - name: "AUTH : check db.auth"
       ansible.builtin.command:
-        cmd: "named-checkzone {{ zone }} {{ zones_path }}/db.auth"
+        cmd: "named-checkzone {{ zone }} {{ zone_path }}/db.auth"
       register: zone_status
       failed_when: zone_status.rc != 0
       changed_when: false
 
-    - name: "Authoritative : reload and restart service"
+    - name: "AUTH : reload and restart service"
       ansible.builtin.systemd:
         name: bind9
         state: restarted

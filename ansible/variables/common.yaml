@@ -1,0 +1,9 @@
+---
+bind_path: "/etc/bind"
+zone_path: "/etc/bind/zone"
+
+ttl: "2"
+num: "{{ ansible_date_time.date | replace('-', '') }}01"
+ref: "3600"
+ret: "1800"
+exp: "3600"

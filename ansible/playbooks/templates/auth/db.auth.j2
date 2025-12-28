@@ -1,22 +1,24 @@
 $TTL {{ ttl }}
+
 @ IN SOA {{ soa_mname }} {{ soa_rname }} (
-  {{ serial_number }}
-  {{ refresh }}
-  {{ retry }}
-  {{ expire }}
-  {{ min_ttl }}
+  {{ num }}
+  {{ ref }}
+  {{ ret }}
+  {{ exp }}
+  {{ ttl }}
 )
 
 @ IN NS {{ primary_ns }}
 @ IN NS {{ secondary_ns }}
 
-{{ primary_ns }} IN A {{ auth_a_ip }}
-{{ secondary_ns }} IN A {{ auth_b_ip }}
+{{ primary_ns }} IN A {{ au_a_ip }}
+{{ secondary_ns }} IN A {{ au_b_ip }}
 
-@ IN A {{ www_a_ip }}
+@ IN A {{ ho_a_ip }}
+@ IN A {{ ho_b_ip }}
 
-www IN A {{ www_a_ip }}
-www IN A {{ www_b_ip }}
+{{ www_record }} IN A {{ ho_a_ip }}
+{{ www_record }} IN A {{ ho_b_ip }}
 
-www-a IN A {{ www_a_ip }}
-www-b IN A {{ www_b_ip }}
+{{ www_record_a }} IN A {{ ho_a_ip }}
+{{ www_record_b }} IN A {{ ho_b_ip }}
