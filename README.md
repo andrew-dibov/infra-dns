@@ -1,60 +1,78 @@
-TODO
-- stub : сделать логгирование ???
+# Infra DNS : система доменных имен
+
+**Описание** : облачная DNS-лаборатория с полным циклом разрешения доменных имен и мониторингом. Реализация инфраструктуры системы, имитирующей классическую иерархию, начиная с корневого сервера, и заканчивая доменными записями, на базе платформы Yandex Cloud. Проект реализован для демонстрация понимания работы сетевых протоколов, принципов системной инженерии и ключевых DevOps-концепций (*IaC, Observability и т.д.*).
+
+## Архитектура
+
+### Слой 1 : Terraform : облачная инфраструктура
+
+Изолированная программно-определяемая сеть (*SDN*) с политиками безопасности Zero-Trust.
+
+- **VPC :** сеть (`dns-net`), подсеть (`10.0.0.0/24`), шлюз и таблица маршрутизации
+- **Security Groups :** SSH-доступ (`bastion`), внутренние DNS-серверы (`core`), ELK-стек (`elasticsearch`)
+- **Виртуальные машины : (`Debian 12`)**
+  - `dns-ins-bastion` - SSH-шлюз
+  - `dns-ins-root` - корневой сервер для зоны (`.`)
+  - `dns-ins-top-level-domain` - TLD сервер для зоны (`domain`)
+  - `dns-ins-authoritative-{a,b}` - авторитативные серверы (*master/slave*) для зоны (`subdomain.domain`)
+  - `dns-ins-recursor` - рекурсивный кеширующий резолвер
+  - `dns-ins-stub` - хост с нагрузочным Docker контейнером (*Go скрипт*)
+  - `dns-ins-elk` - ELK стек (*Logstash, Elasticsearch и Kibana*) 
+
+### Слой 2 : Ansible + Bind9 : система доменных имен
+
+Ansible-плейбуки (`infra-*`), выполняющие идемпотентное развертывание иерархии разрешения доменных имен.
+
+- **Иерархия и делегирование :**
+  - `root` -> делегирование `domain.` -> `tldd`
+  - `tldd` -> делегирование `subdomain.domain.` -> `au_a`/`au_b`
+  - `au_a`/`au_b` - хранение конечных записей (A, AAAA)
+- **Роли :**
+  - **Авторитативные :** `root`, `tldd`, `au_a`, `au_b`
+  - **Рекурсивный :** `recr`
+  - **Клиентский :** `stub`
+- **Особенности :**
+  - Валидация конфигураций (`named-checkconf` + `named-checkzone`)
+  - Идемпотентное развертывание
+  - Конфигурация логирования запросов
+
+### Слой 3 : ELK Stack + Vector : мониторинг
+
+- **Сбор логов :** vector-агенты (`elk-agent.yaml`) на каждом узле DNS инфраструктуры, отправляющие логи Bind9 в Logstash
+- **Агрегация и визуализация :** Docker Compose стек (`elk-stck.yaml`) на хосте `elko` (`elasticsearch`, `logstash` + `kibana`)
+- **Автоматическая конфигурация :** автоматическое создание Data View в Kibana для анализа трафика
+
+### Слой 4 : Go-скрипт : тестирование
+
+Кастомный скрипт (`stub/`), выполняющий роль stub-резолвера.
+
+- **Назначение :** генерация имитации реалистичного DNS-трафика для тестирования инфраструктуры
+- **Особенности :**
+  - Переменная нагрузка (случайное число запросов и временные интервалы)
+  - Переменный список доменой через `DOMAINS`
+  - Логгирование результатов запросов и ошибок разрешения
+- **Развертывание :** запуск в Docker-контейнере на хосте `stub` (плейбук `infra-stub.yaml`)
+
+## Технологии и навыки
+
+| Категория | Технологии/Инструменты | Навыки |
+| :-- | :-- | :-- |
+| **Cloud & IaC** | Yandex Cloud, Yandex Provider, Terraform | Программное определение инфраструктуры, работа с VPC, Security Groups, автоматическая генерация ключей |
+| **Configuration Management** | Ansible, Jinja2 | Идемпотентная настройка распределённых систем, работа с шаблонами, управление сервисами |
+| **Monitoring & Observability** | ELK Stack (Elasticsearch, Logstash, Kibana), Vector | Централизованный сбор и анализ логов, настройка пайплайнов данных, парсинг текстовых записей, визуализация метрик |
+| **Networking & DNS** | BIND9 (авторитативный/рекурсивный), DNS-протокол (UDP/TCP)| Понимание архитектуры DNS : зон, делегирования, рекурсивного и авторитативного резолвинга |
+| **Containers & Development** | Docker, Go | Разработка скриптов, контейнеризация, работа с переменными окружения |
+| **Automation** | Динамический инвентарь Ansible, генерация конфигураций в Terraform | Автоматизация полного цикла развёртывания, интеграция между инструментами |
+| **Security** | Security Groups (Zero-Trust), SSH-ключи (Ed25519), изоляция сети, бастион хост | Безопасность облачной инфраструктуры, принцип минимальных привилегий |
+
+# TODO
+- stub : доделать логирование
 - elasticsearch : сделать настраивать политики хранения логов на 1 час
 - делать автоматические сбои по таймауту ???
+- скрипт подоготовки и теста проекта на баше
 
+## Развертывание ДОПИСАТЬ
 
----
-
-10-Jan-2026 06:09:18.023 queries: info: client @0x7f292b669c98 10.0.0.26#44743 (unknown.subdomain.domain.auto.internal): query: unknown.subdomain.domain.auto.internal IN AAAA +E(0) (10.0.0.34)
-10-Jan-2026 06:09:18.023 queries: info: client @0x7f292d49ec98 10.0.0.26#47491 (unknown.subdomain.domain.auto.internal): query: unknown.subdomain.domain.auto.internal IN A +E(0) (10.0.0.34)
-10-Jan-2026 06:09:18.023 resolver: debug 1: fetch: unknown.subdomain.domain.auto.internal/AAAA
-10-Jan-2026 06:09:18.023 resolver: debug 1: fetch: unknown.subdomain.domain.auto.internal/A
-10-Jan-2026 06:09:18.023 resolver: debug 1: fetch: auto.internal/NS
-10-Jan-2026 06:09:18.023 resolver: debug 1: fetch: auto.internal/NS
-10-Jan-2026 06:09:18.123 queries: info: client @0x7f292b669c98 10.0.0.26#47597 (wwa.subdomain.domain): query: wwa.subdomain.domain IN A +E(0) (10.0.0.34)
-10-Jan-2026 06:09:18.123 resolver: debug 1: fetch: wwa.subdomain.domain/A
-10-Jan-2026 06:09:18.123 resolver: debug 1: fetch: wwa.subdomain.domain/AAAA
-
-10-Jan-2026 06:15:46.311 query-errors: info: client @0x7f292b668098 10.0.0.26#35605 (www.subdomain.domain): query failed (operation canceled) for www.subdomain.domain/IN/AAAA at query.c:7898
-10-Jan-2026 06:15:46.311 query-errors: info: client @0x7f292d4a2498 10.0.0.26#45043 (www.subdomain.domain): query failed (operation canceled) for www.subdomain.domain/IN/AAAA at query.c:7898
-10-Jan-2026 06:15:46.311 query-errors: info: client @0x7f292d429098 10.0.0.26#40849 (www.subdomain.domain): query failed (operation canceled) for www.subdomain.domain/IN/A at query.c:7898
-10-Jan-2026 06:15:46.311 query-errors: info: client @0x7f292d49ec98 10.0.0.26#37104 (www.subdomain.domain): query failed (operation canceled) for www.subdomain.domain/IN/A at query.c:7898
-
-# classical queries req
-
---- "%{log_date} %{log_time}.${} %{log_category}: "
-
-SG bastion
-  ingress
-    TCP 22    from  0.0.0.0/0     # ssh to bastion
-  egress
-    TCP 22    to    SUBNET        # ssh jump to subnet hosts
-    UDP 53    to    0.0.0.0/0     # apt resolve repos domain names
-    TCP 80    to    0.0.0.0/0     # apt updates
-    TCP 443   to    0.0.0.0/0     # apt updates
-
-SG monitoring
-  ingress
-    TCP 22    from  SG bastion    # accept ssh jumps from bastion
-    TCP 5601  from  0.0.0.0/0     # kibana GUI
-    ANY --    from  SG internal   # communication with internal hosts
-  egress
-    UDP 53    to    0.0.0.0/0     # apt resolve repos domain names
-    TCP 80    to    0.0.0.0/0     # apt updates
-    TCP 443   to    0.0.0.0/0     # apt updates
-    ANY --    to    SG internal   # communication with internal hosts
-
-SG internal
-  ingress
-    TCP 22    from  SG bastion    # accept ssh jumps from bastion
-    UDP 53    from  SUBNET        # dns zone transfer : root, tld, authoritative, recursive
-    TCP 53    from  SUBNET        # dns requests : root, tld, authoritative, recursive
-    ANY --    from  SG monitoring # monitoring
-  egress
-    UDP 53    to    SUBNET        # dns zone transfer : root, tld, authoritative, recursive
-    TCP 53    to    SUBNET        # dns requests : root, tld, authoritative, recursive
-    UDP 53    to    0.0.0.0/0     # apt resolve repos domain names
-    TCP 80    to    0.0.0.0/0     # apt updates
-    TCP 443   to    0.0.0.0/0     # apt updates
-    ANY --    to    SG monitoring # monitoring
+1. инициализация инфраструктуры
+2. развертывание сервисов
+3. игра с песочницей
