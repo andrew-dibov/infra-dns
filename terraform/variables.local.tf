@@ -1,6 +1,6 @@
 locals {
   inss__names = {
-    towr = "dns-ins-tower"
+    elko = "dns-ins-elk"
     bast = "dns-ins-bastion"
     root = "dns-ins-root"
     tldd = "dns-ins-top-level-domain"
@@ -9,9 +9,9 @@ locals {
     recr = "dns-ins-recursor"
     stub = "dns-ins-stub"
   }
-  inss__confs = {
-    (local.inss__names.towr) = {
-      description = "observability instance : towr : prometheus + ELK"
+  inss__cfgs = {
+    (local.inss__names.elko) = {
+      description = "observability instance : elko : elasticsearch + logstash + kibana"
 
       resources = {
         cores         = 4
@@ -25,14 +25,14 @@ locals {
 
       network_interface = {
         nat                = true
-        security_group_ids = [yandex_vpc_security_group.towr.id]
+        security_group_ids = [yandex_vpc_security_group.elko.id]
       }
 
       scheduling_policy = {
         preemptible = true
       }
 
-      role = "towr"
+      role = "elko"
     },
     (local.inss__names.bast) = {
       description = "bastion instance : bast : ssh gateway"
@@ -203,14 +203,14 @@ locals {
       role = "stub"
     },
   }
-  inss__templates = {
-    (local.inss__names.towr) = templatefile("${var.tf_templates__dir}/cloud-config/dock.tftpl", { pkgs = ["python${var.py__version}", "ca-certificates", "curl"] })
-    (local.inss__names.bast) = templatefile("${var.tf_templates__dir}/cloud-config/bast.tftpl", { pkgs = [] })
-    (local.inss__names.root) = templatefile("${var.tf_templates__dir}/cloud-config/deft.tftpl", { pkgs = ["python${var.py__version}"] })
-    (local.inss__names.tldd) = templatefile("${var.tf_templates__dir}/cloud-config/deft.tftpl", { pkgs = ["python${var.py__version}"] })
-    (local.inss__names.au_a) = templatefile("${var.tf_templates__dir}/cloud-config/deft.tftpl", { pkgs = ["python${var.py__version}"] })
-    (local.inss__names.au_b) = templatefile("${var.tf_templates__dir}/cloud-config/deft.tftpl", { pkgs = ["python${var.py__version}"] })
-    (local.inss__names.recr) = templatefile("${var.tf_templates__dir}/cloud-config/deft.tftpl", { pkgs = ["python${var.py__version}"] })
-    (local.inss__names.stub) = templatefile("${var.tf_templates__dir}/cloud-config/dock.tftpl", { pkgs = ["python${var.py__version}", "ca-certificates", "curl"] })
+  inss__tpls = {
+    (local.inss__names.elko) = templatefile("${var.tf_tpl__dir}/ci.dock.tftpl", { pkgs = ["python${var.py__ver}", "ca-certificates", "curl", "dnsutils"] })
+    (local.inss__names.bast) = templatefile("${var.tf_tpl__dir}/ci.bast.tftpl", { pkgs = [] })
+    (local.inss__names.root) = templatefile("${var.tf_tpl__dir}/ci.deft.tftpl", { pkgs = ["python${var.py__ver}", "dnsutils"] })
+    (local.inss__names.tldd) = templatefile("${var.tf_tpl__dir}/ci.deft.tftpl", { pkgs = ["python${var.py__ver}", "dnsutils"] })
+    (local.inss__names.au_a) = templatefile("${var.tf_tpl__dir}/ci.deft.tftpl", { pkgs = ["python${var.py__ver}", "dnsutils"] })
+    (local.inss__names.au_b) = templatefile("${var.tf_tpl__dir}/ci.deft.tftpl", { pkgs = ["python${var.py__ver}", "dnsutils"] })
+    (local.inss__names.recr) = templatefile("${var.tf_tpl__dir}/ci.deft.tftpl", { pkgs = ["python${var.py__ver}", "dnsutils"] })
+    (local.inss__names.stub) = templatefile("${var.tf_tpl__dir}/ci.dock.tftpl", { pkgs = ["python${var.py__ver}", "ca-certificates", "curl", "dnsutils"] })
   }
 }

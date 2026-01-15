@@ -1,0 +1,7 @@
+---
+all:
+  hosts:
+  %{ for name, vm in inss ~}
+  ${trimspace(vm.labels.role)}:%{ if contains(["elko", "bast", "root", "tldd", "au_a", "au_b", "recr", "stub"], vm.labels.role) }
+      ansible_host: ${trimspace(name)}
+  %{ endif }%{ endfor ~}

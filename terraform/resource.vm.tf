@@ -3,7 +3,7 @@ data "yandex_compute_image" "img" {
 }
 
 resource "yandex_compute_instance" "inss" {
-  for_each = local.inss__confs
+  for_each = local.inss__cfgs
 
   zone        = yandex_vpc_subnet.sub.zone
   platform_id = var.ins__platform_id
@@ -41,29 +41,31 @@ resource "yandex_compute_instance" "inss" {
 
   metadata = {
     ssh-keys  = "debian:${tls_private_key.key[each.key].public_key_openssh}"
-    user-data = local.inss__templates[each.key]
+    user-data = local.inss__tpls[each.key]
   }
 }
 
-resource "local_file" "ansible_cfg" {
-  filename = "${var.ansible__dir}/ansible.cfg"
-  content  = templatefile("${var.tf_templates__dir}/ansible/ansible.tftpl", {
-    py = "python${var.py__version}"
+# ---
+
+resource "local_file" "ansi_cfg" {
+  filename = "${var.an__dir}/ansible.cfg"
+  content = templatefile("${var.tf_tpl__dir}/ansi.cfg.tftpl", {
+    py = "python${var.py__ver}"
   })
 }
 
-resource "local_file" "ansible_inv" {
-  filename = "${var.ansible__dir}/inventory/terraform.yaml"
-  content = templatefile("${var.tf_templates__dir}/ansible/inventory.tftpl", {
+resource "local_file" "ansi_inv" {
+  filename = "${var.an__dir}/inventory/terraform.yaml"
+  content = templatefile("${var.tf_tpl__dir}/ansi.inv.tftpl", {
     inss = yandex_compute_instance.inss
   })
 }
 
-resource "local_file" "ansible_var" {
-  filename = "${var.ansible__dir}/variables/terraform.yaml"
-  content = templatefile("${var.tf_templates__dir}/ansible/variables.tftpl", {
-    su_cidr = var.vpc_subnet__v4_cidr_blocks[0]
-    towr_ip = yandex_compute_instance.inss["${local.inss__names.towr}"].network_interface[0].ip_address
+resource "local_file" "ansi_var" {
+  filename = "${var.an__dir}/variables/terraform.yaml"
+  content = templatefile("${var.tf_tpl__dir}/ansi.var.tftpl", {
+    su_cidr = var.vpc_sub__v4_cidr_blocks[0]
+    elko_ip = yandex_compute_instance.inss["${local.inss__names.elko}"].network_interface[0].ip_address
     root_ip = yandex_compute_instance.inss["${local.inss__names.root}"].network_interface[0].ip_address
     tldd_ip = yandex_compute_instance.inss["${local.inss__names.tldd}"].network_interface[0].ip_address
     au_a_ip = yandex_compute_instance.inss["${local.inss__names.au_a}"].network_interface[0].ip_address

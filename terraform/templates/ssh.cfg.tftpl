@@ -1,7 +1,7 @@
 %{ for name, cfg in inss ~}
 Host ${name}
   HostName ${cfg.ins_name}
-  User ${cfg.user}
+  User ${cfg.ins_user}
   IdentityFile ${cfg.key_path}
   StrictHostKeyChecking accept-new
 %{ if !cfg.is_bast ~}

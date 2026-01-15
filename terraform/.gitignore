@@ -6,3 +6,4 @@
 *.tfstate.*
 
 terraform.tfvars
+auth.terraform.json

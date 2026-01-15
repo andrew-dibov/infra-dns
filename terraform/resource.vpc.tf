@@ -3,17 +3,6 @@ resource "yandex_vpc_network" "net" {
   description = "VPC : network : net"
 }
 
-resource "yandex_vpc_subnet" "sub" {
-  network_id = yandex_vpc_network.net.id
-
-  name        = var.vpc_subnet__name
-  description = "VPC : subnet : sub"
-
-  zone           = var.yandex_cloud__zone_id
-  v4_cidr_blocks = var.vpc_subnet__v4_cidr_blocks
-  route_table_id = yandex_vpc_route_table.rt.id
-}
-
 resource "yandex_vpc_gateway" "gw" {
   name        = var.vpc_gw__name
   description = "VPC : gateway : gw : egress for net"
@@ -32,6 +21,19 @@ resource "yandex_vpc_route_table" "rt" {
     gateway_id         = yandex_vpc_gateway.gw.id
   }
 }
+
+resource "yandex_vpc_subnet" "sub" {
+  network_id = yandex_vpc_network.net.id
+
+  name        = var.vpc_sub__name
+  description = "VPC : subnet : sub"
+
+  zone           = var.yc__zone_id
+  v4_cidr_blocks = var.vpc_sub__v4_cidr_blocks
+  route_table_id = yandex_vpc_route_table.rt.id
+}
+
+# ---
 
 resource "yandex_vpc_security_group" "bast" {
   network_id = yandex_vpc_network.net.id
@@ -70,11 +72,11 @@ resource "yandex_vpc_security_group" "bast" {
   }
 }
 
-resource "yandex_vpc_security_group" "towr" {
+resource "yandex_vpc_security_group" "elko" {
   network_id = yandex_vpc_network.net.id
 
-  name        = var.vpc_sg_towr__name
-  description = "VPC : security group : towr : observability"
+  name        = var.vpc_sg_elko__name
+  description = "VPC : security group : elko : observability"
 
   ingress {
     protocol          = "TCP"
@@ -168,6 +170,6 @@ resource "yandex_vpc_security_group" "core" {
 
   egress {
     protocol          = "ANY"
-    security_group_id = yandex_vpc_security_group.towr.id
+    security_group_id = yandex_vpc_security_group.elko.id
   }
 }
