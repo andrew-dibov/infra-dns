@@ -9,15 +9,18 @@ DNS-лаборатория с полным циклом разрешения д�
 Изолированная сеть с политиками безопасности по zero-trust
 
 - **VPC** : сеть, подсеть, шлюз и таблица маршрутизации
-- **Security Groups** : SSH-доступ `bastion`, DNS-серверы `core`, ELK-стек `elasticsearch`
+- **Security Groups** :
+  - `core` : DNS-серверы
+  - `bastion` : SSH-доступ
+  - `elasticsearch` : ELK-стек
 - **VMs** :
   - `dns-ins-bastion` : SSH-шлюз
   - `dns-ins-root` : корневой сервер зоны `.`
   - `dns-ins-top-level-domain` : TLD-сервер зоны `domain`
-  - `dns-ins-authoritative-{a,b}` : авторитативные серверы зоны `subdomain.domain` : *master/slave*
+  - `dns-ins-authoritative-{a,b}` : авторитативные серверы зоны `subdomain.domain` : master/slave
   - `dns-ins-recursor` : рекурсивный кеширующий резолвер
-  - `dns-ins-stub` : хост с нагрузочным Docker-контейнером : *Go скрипт*
-  - `dns-ins-elk` : ELK-стек : *Logstash, Elasticsearch, Kibana*
+  - `dns-ins-stub` : хост с нагрузочным Docker-контейнером : Go-скрипт
+  - `dns-ins-elk` : ELK-стек : Logstash, Elasticsearch, Kibana
 
 ### Слой 2 : Система доменных имен : Ansible + Bind9
 
@@ -26,12 +29,12 @@ Ansible-плейбуки, выполняющие идемпотентное ра
 - **Иерархия и делегирование** :
   - `root` -> `domain.` -> `tldd`
   - `tldd` -> `subdomain.domain.` -> `au_a`/`au_b`
-  - `au_a`/`au_b` -> конечные записи : *A, AAAA*
+  - `au_a`/`au_b` -> конечные записи : `A`, `AAAA`
 
 ### Слой 3 : Мониторинг : ELK + Vector
 
 - **Сбор логов** : Vector-агент на каждом узле DNS-инфраструктуры, собирающий логи Bind9
-- **Агрегация и визуализация** : Docker Compose стек на хосте `elko` : *Logstash, Elasticsearch, Kibana*
+- **Агрегация и визуализация** : Docker Compose : Logstash, Elasticsearch, Kibana
 
 ### Слой 4 : Тестирование : Go
 
