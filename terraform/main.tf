@@ -16,22 +16,22 @@ variable "yc__zone_id" {
 # ---
 
 terraform {
-  required_version = "~> 1.14.0" # 1.14.X
+  required_version = ">= 1.14.0"
 
   required_providers {
     yandex = {
       source  = "yandex-cloud/yandex"
-      version = "~> 0.174.0" # 0.174.X
+      version = "~> 0.174.0"
     }
 
     tls = {
       source  = "hashicorp/tls"
-      version = "~> 4.1.0" # 4.1.X
+      version = "~> 4.1.0"
     }
 
     local = {
       source  = "hashicorp/local"
-      version = "~> 2.6.1" # 2.6.X
+      version = "~> 2.6.1"
     }
   }
 }

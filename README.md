@@ -57,27 +57,41 @@ Ansible-плейбуки, выполняющие идемпотентное ра
 | **Automation** | Динамический инвентарь Ansible, генерация конфигураций в Terraform | Автоматизация полного цикла развёртывания, интеграция между инструментами |
 | **Security** | Security Groups (Zero-Trust), SSH-ключи (Ed25519), изоляция сети, бастион хост | Безопасность облачной инфраструктуры, принцип минимальных привилегий |
 
+## Требования
+
+- **Terraform** : 1.14.0 и выше
+- **Ansible** : 9.5 до 9.6
+- **Ansible Core** : 2.16 до 2.17
+- **YandexCloud CLI** : от 0.198
+
 ## Развертывание
 
 ```bash
-git clone git@github.com:andrew-dibov/infra-dns.git
-cd infra-dns
+# скопировать и перейти
+git clone git@github.com:andrew-dibov/infra-dns.git && cd infra-dns
 
+# создать директорию под ssh-ключи
 mkdir .auth
+
+# добавить переменные
 cat > ./terraform/terraform.tfvars << EOF
-yc__cloud_id = "$(yc config get cloud-id)"
+yc__cloud_id  = "$(yc config get cloud-id)"
 yc__folder_id = "$(yc config get folder-id)"
-yc__zone_id = "$(yc config get zone)"
+yc__zone_id   = "ru-central1-a"
 EOF
 
+# сгенерировать ключ сервисного аккаунта
 yc iam key create --service-account-name terraform-sa --output ./terraform/auth.terraform.json
 
-cd terraform
-terraform init
-terraform apply
+# установить соответствующую версию ansible
+pip install -r ./ansible/requirements.txt
 
-cd ../ansible
-ansible all -m ping
-ansible-playbook playbooks/infra-*
-ansible-playbook playbooks/elk-*
+# инициализировать и применить terraform
+terraform init -chdir=./terraform
+terraform apply -chdir=./terraform
+
+# проверить доступность и применить ansible
+(cd ansible && ansible all -m ping)
+(cd ansible && ansible-playbook playbooks/infra-*)
+(cd ansible && ansible-playbook playbooks/elk-*)
 ```
