@@ -59,7 +59,7 @@ Ansible-плейбуки, выполняющие идемпотентное ра
 
 ## Требования
 
-- **Terraform** : 1.14.0 и выше
+- **Terraform** : от 1.14.0
 - **Ansible** : 9.5 до 9.6
 - **Ansible Core** : 2.16 до 2.17
 - **YandexCloud CLI** : от 0.198
@@ -68,7 +68,7 @@ Ansible-плейбуки, выполняющие идемпотентное ра
 
 ```bash
 # скопировать и перейти
-git clone git@github.com:andrew-dibov/infra-dns.git && cd infra-dns
+git clone https://github.com/andrew-dibov/infra-dns.git && cd infra-dns
 
 # создать директорию под ssh-ключи
 mkdir .auth
